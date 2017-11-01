@@ -1,0 +1,42 @@
+# Configuration - will automatically remove any version you don't have.
+
+GCC_VERSIONS :=
+GCC_VERSIONS += 4.5
+GCC_VERSIONS += 4.6
+GCC_VERSIONS += 4.7
+GCC_VERSIONS += 4.8
+GCC_VERSIONS += 4.9
+GCC_VERSIONS += 5
+GCC_VERSIONS += 6
+GCC_VERSIONS += 7
+GCC_VERSIONS += 8
+GCC_VERSIONS += 9 # doesn't exist yet, as of when this is written
+
+GCC_VERSIONS := $(foreach v,${GCC_VERSIONS}, $(patsubst g++-%,%,$(notdir $(shell which g++-$v))))
+
+space = ${empty} ${empty}
+comma = ,
+$(info Found GCC versions: $(subst ${space},${comma}${space},$(strip ${GCC_VERSIONS})))
+
+# Generic "forward everything to another makefile" logic
+
+.DEFAULT_GOAL = .default_goal
+.PHONY: ${MAKECMDGOALS}
+${MAKECMDGOALS} .default_goal: $(addprefix .forward-all-,${GCC_VERSIONS})
+	@:
+
+gcc-%/Makefile:
+	mkdir -p ${@D}
+	@rm -f $@
+	@echo CC=gcc-$* >> $@
+	@echo CXX=g++-$* >> $@
+	echo include ../Makefile.one >> $@
+
+.forward-all-%: gcc-%/Makefile
+	${MAKE} -R -r -C gcc-$* ${MAKECMDGOALS}
+
+${MAKEFILE_LIST}:
+	@:
+.SUFFIXES:
+.SECONDARY:
+.DELETE_ON_ERROR:
