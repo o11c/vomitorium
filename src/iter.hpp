@@ -129,6 +129,7 @@ C&& container_wrapper(C&& c)
 # endif // GCC_VERSION >= 4006
 
 MAKE_VEC_ITERATOR(alias_pair, gc);
+MAKE_VEC_ITERATOR(constructor_elt, gc);
 MAKE_VEC_ITERATOR(tree, gc);
 
 #undef num

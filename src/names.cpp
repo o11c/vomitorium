@@ -1,7 +1,8 @@
 #include "names.hpp"
-#include "internal.hpp"
 
 #include <cassert>
+
+#include "internal.hpp"
 
 
 const char *rid_names[RID_MAX];
@@ -17,18 +18,50 @@ const char *cpti_names[CPTI_MAX];
 const char *cilk_ti_names[CILK_TI_MAX];
 #endif
 
+// no _MAX element for these!
+// guess; the assert will probably catch it
+const char *omp_clause_schedule_names[5];
+const char *omp_clause_default_names[5];
 
-// in GCC's tree.c, but not exported
-const char *ts_enum_names[LAST_TS_ENUM] = {
-#define DEFTREESTRUCT(VAL, NAME) NAME,
-#include "treestruct.def"
-#undef DEFTREESTRUCT
+const char *const tls_model_names[] =
+{
+    "none",
+    "emulated",
+    "global_dynamic", // aka "real",
+    "local_dynamic",
+    "initial_exec",
+    "local_exec",
 };
 
+const char *symbol_visibility_names[4];
+const char *cpp_node_type_names[3];
+const char *cpp_builtin_type_names[
+    10
+#if GCCPLUGIN_VERSION >= 5000
+    + 1 // BT_HAS_ATTRIBUTE
+#endif
+#if GCCPLUGIN_VERSION >= 4006
+    + (BT_LAST_USER+1 - BT_FIRST_USER)
+#endif
+];
 
+
+// can't use decltype in an expression until 4.7
+template<size_t n>
+struct array_size_helper_class
+{
+    char sizer[n];
+};
+template<class T, size_t n>
+array_size_helper_class<n> array_sizeof_helper(T (&)[n]);
+// constexpr even in gcc 4.5 which doesn't support the keyword
+#define ARRAY_SIZEOF(a) (sizeof(array_sizeof_helper(a)))
 // Boo, no designated-initializers in C++.
-#define NAME(a, x) do { assert(a[x] == nullptr); a[x] = #x; } while (0)
+#define NAME(a, x) do { assert (x >= 0 && x < ARRAY_SIZEOF(a)); assert(a[x] == nullptr); a[x] = #x; } while (0)
 #define CHECK(a) check_array(#a, a)
+
+__attribute__((unused))
+static int constexpr_check[ARRAY_SIZEOF(rid_names)];
 
 template<class T, size_t N>
 static void check_array(const char *name, T (&arr)[N])
@@ -811,4 +844,86 @@ static void check()
     NAME(cilk_ti_names, CILK_TI_WORKER_TYPE);
     CHECK(cilk_ti_names);
 #endif
+
+    NAME(omp_clause_schedule_names, OMP_CLAUSE_SCHEDULE_STATIC);
+    NAME(omp_clause_schedule_names, OMP_CLAUSE_SCHEDULE_DYNAMIC);
+    NAME(omp_clause_schedule_names, OMP_CLAUSE_SCHEDULE_GUIDED);
+    NAME(omp_clause_schedule_names, OMP_CLAUSE_SCHEDULE_AUTO);
+    NAME(omp_clause_schedule_names, OMP_CLAUSE_SCHEDULE_RUNTIME);
+    CHECK(omp_clause_schedule_names);
+
+    NAME(omp_clause_default_names, OMP_CLAUSE_DEFAULT_UNSPECIFIED);
+    NAME(omp_clause_default_names, OMP_CLAUSE_DEFAULT_SHARED);
+    NAME(omp_clause_default_names, OMP_CLAUSE_DEFAULT_NONE);
+    NAME(omp_clause_default_names, OMP_CLAUSE_DEFAULT_PRIVATE);
+    NAME(omp_clause_default_names, OMP_CLAUSE_DEFAULT_FIRSTPRIVATE);
+    CHECK(omp_clause_default_names);
+
+    assert (strcmp(tls_model_names[TLS_MODEL_NONE], "none") == 0);
+    assert (strcmp(tls_model_names[TLS_MODEL_EMULATED], "emulated") == 0);
+    assert (strcmp(tls_model_names[TLS_MODEL_GLOBAL_DYNAMIC], "global_dynamic") == 0);
+    assert (strcmp(tls_model_names[TLS_MODEL_REAL], "global_dynamic") == 0);
+    assert (strcmp(tls_model_names[TLS_MODEL_LOCAL_DYNAMIC], "local_dynamic") == 0);
+    assert (strcmp(tls_model_names[TLS_MODEL_INITIAL_EXEC], "initial_exec") == 0);
+    assert (strcmp(tls_model_names[TLS_MODEL_LOCAL_EXEC], "local_exec") == 0);
+
+    NAME(symbol_visibility_names, VISIBILITY_DEFAULT);
+    NAME(symbol_visibility_names, VISIBILITY_PROTECTED);
+    NAME(symbol_visibility_names, VISIBILITY_HIDDEN);
+    NAME(symbol_visibility_names, VISIBILITY_INTERNAL);
+    CHECK(symbol_visibility_names);
+
+    NAME(cpp_node_type_names, NT_VOID);
+    NAME(cpp_node_type_names, NT_MACRO);
+    NAME(cpp_node_type_names, NT_ASSERTION);
+    CHECK(cpp_node_type_names);
+
+    NAME(cpp_builtin_type_names, BT_SPECLINE);
+    NAME(cpp_builtin_type_names, BT_DATE);
+    NAME(cpp_builtin_type_names, BT_FILE);
+    NAME(cpp_builtin_type_names, BT_BASE_FILE);
+    NAME(cpp_builtin_type_names, BT_INCLUDE_LEVEL);
+    NAME(cpp_builtin_type_names, BT_TIME);
+    NAME(cpp_builtin_type_names, BT_STDC);
+    NAME(cpp_builtin_type_names, BT_PRAGMA);
+    NAME(cpp_builtin_type_names, BT_TIMESTAMP);
+    NAME(cpp_builtin_type_names, BT_COUNTER);
+#if GCCPLUGIN_VERSION >= 5000
+    NAME(cpp_builtin_type_names, BT_HAS_ATTRIBUTE);
+#endif
+#if GCCPLUGIN_VERSION >= 4006
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+0);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+1);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+2);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+3);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+4);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+5);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+6);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+7);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+8);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+9);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+10);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+11);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+12);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+13);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+14);
+    NAME(cpp_builtin_type_names, BT_FIRST_USER+15);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-15);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-14);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-13);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-12);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-11);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-10);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-9);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-8);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-7);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-6);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-5);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-4);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-3);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-2);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-1);
+    NAME(cpp_builtin_type_names, BT_LAST_USER-0);
+#endif
+    CHECK(cpp_builtin_type_names);
 }

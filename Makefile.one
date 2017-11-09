@@ -54,6 +54,7 @@ SOURCES = \
     names.cpp \
     visit.cpp \
     weak.cpp \
+    weak-check.cpp \
     vomitorium.cpp
 GOALS = lib/demo.so lib/vomitorium.so
 
