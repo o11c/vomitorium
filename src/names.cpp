@@ -2,26 +2,49 @@
 
 #include <cassert>
 
-#include "internal.hpp"
+#include "vgcc/c-family/c-common.h"
+#include "vgcc/cilk.h"
 
+// internal to tree.c; copied out in case we want it.
+#define DEFTREESTRUCT(VAL, NAME) NAME,
+const char *ts_enum_names[] = {
+#include "treestruct.def"
+};
+#undef DEFTREESTRUCT
 
 const char *rid_names[RID_MAX];
 const char *cti_names[CTI_MAX];
 const char *ti_names[TI_MAX];
 const char *itk_names[itk_none];
-#if GCCPLUGIN_VERSION >= 4008
+#if V(4, 8)
 # define TYPE_KIND_LAST stk_type_kind_last
 #endif
 const char *stk_names[TYPE_KIND_LAST];
 const char *cpti_names[CPTI_MAX];
-#if GCCPLUGIN_VERSION >= 5000
+#if V(5)
 const char *cilk_ti_names[CILK_TI_MAX];
 #endif
 
-// no _MAX element for these!
-// guess; the assert will probably catch it
-const char *omp_clause_schedule_names[5];
-const char *omp_clause_default_names[5];
+#if !V(6)
+# define OMP_CLAUSE_SCHEDULE__ARRAY_LAST_ OMP_CLAUSE_SCHEDULE_LAST
+#else
+# define OMP_CLAUSE_SCHEDULE__ARRAY_LAST_ (OMP_CLAUSE_SCHEDULE_MASK+1)
+#endif
+const char *omp_clause_schedule_names[OMP_CLAUSE_SCHEDULE__ARRAY_LAST_];
+const char *omp_clause_default_names[OMP_CLAUSE_DEFAULT_LAST];
+#if V(4, 9)
+const char *omp_clause_depend_names[OMP_CLAUSE_DEPEND_LAST];
+#if !V(5)
+const char *omp_clause_map_names[OMP_CLAUSE_MAP_LAST];
+#else
+const char *gomp_map_names[GOMP_MAP__ARRAY_LAST_];
+#endif
+const char *omp_clause_proc_bind_names[OMP_CLAUSE_PROC_BIND_LAST];
+#endif
+#if V(6)
+// no _LAST
+const char *omp_clause_linear_names[4];
+#endif
 
 const char *const tls_model_names[] =
 {
@@ -37,10 +60,10 @@ const char *symbol_visibility_names[4];
 const char *cpp_node_type_names[3];
 const char *cpp_builtin_type_names[
     10
-#if GCCPLUGIN_VERSION >= 5000
+#if V(5)
     + 1 // BT_HAS_ATTRIBUTE
 #endif
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     + (BT_LAST_USER+1 - BT_FIRST_USER)
 #endif
 ];
@@ -82,9 +105,12 @@ static void check_array(const char *name, T (&arr)[N])
 __attribute__((constructor))
 static void check()
 {
+    if (strcmp(ts_enum_names[TS_TYPE_DECL], "label decl") == 0)
+        ts_enum_names[TS_TYPE_DECL] = "type decl";
+
     // from <c-family/c-common.h>
     NAME(rid_names, RID_ACCUM);
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(rid_names, RID_ADDRESSOF);
 #endif
     NAME(rid_names, RID_ADDR_SPACE_0);
@@ -103,18 +129,18 @@ static void check()
     NAME(rid_names, RID_ADDR_SPACE_7);
     NAME(rid_names, RID_ADDR_SPACE_8);
     NAME(rid_names, RID_ADDR_SPACE_9);
-#if GCCPLUGIN_VERSION >= 4007
+#if V(4, 7)
     NAME(rid_names, RID_ALIGNAS);
 #endif
     NAME(rid_names, RID_ALIGNOF);
     NAME(rid_names, RID_ASM);
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_ASSIGN);
 #endif
-#if GCCPLUGIN_VERSION >= 4009
+#if V(4, 9)
     NAME(rid_names, RID_ATOMIC);
 #endif
-#if GCCPLUGIN_VERSION >= 6000
+#if V(6)
     NAME(rid_names, RID_ATOMIC_CANCEL);
     NAME(rid_names, RID_ATOMIC_NOEXCEPT);
 #endif
@@ -123,7 +149,7 @@ static void check()
     NAME(rid_names, RID_AT_CATCH);
     NAME(rid_names, RID_AT_CLASS);
     NAME(rid_names, RID_AT_DEFS);
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_AT_DYNAMIC);
 #endif
     NAME(rid_names, RID_AT_ENCODE);
@@ -131,46 +157,46 @@ static void check()
     NAME(rid_names, RID_AT_FINALLY);
     NAME(rid_names, RID_AT_IMPLEMENTATION);
     NAME(rid_names, RID_AT_INTERFACE);
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_AT_OPTIONAL);
     NAME(rid_names, RID_AT_PACKAGE);
 #endif
     NAME(rid_names, RID_AT_PRIVATE);
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_AT_PROPERTY);
 #endif
     NAME(rid_names, RID_AT_PROTECTED);
     NAME(rid_names, RID_AT_PROTOCOL);
     NAME(rid_names, RID_AT_PUBLIC);
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_AT_REQUIRED);
 #endif
     NAME(rid_names, RID_AT_SELECTOR);
     NAME(rid_names, RID_AT_SYNCHRONIZED);
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_AT_SYNTHESIZE);
 #endif
     NAME(rid_names, RID_AT_THROW);
     NAME(rid_names, RID_AT_TRY);
     NAME(rid_names, RID_AUTO);
-#if GCCPLUGIN_VERSION >= 4009
+#if V(4, 9)
     NAME(rid_names, RID_AUTO_TYPE);
 #endif
-#if GCCPLUGIN_VERSION >= 4007
+#if V(4, 7)
     NAME(rid_names, RID_BASES);
 #endif
     NAME(rid_names, RID_BOOL);
     NAME(rid_names, RID_BREAK);
-#if GCCPLUGIN_VERSION >= 5000
+#if V(5)
     NAME(rid_names, RID_BUILTIN_CALL_WITH_STATIC_CHAIN);
 #endif
-#if GCCPLUGIN_VERSION >= 4007
+#if V(4, 7)
     NAME(rid_names, RID_BUILTIN_COMPLEX);
 #endif
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(rid_names, RID_BUILTIN_LAUNDER);
 #endif
-#if GCCPLUGIN_VERSION >= 4007
+#if V(4, 7)
     NAME(rid_names, RID_BUILTIN_SHUFFLE);
 #endif
     NAME(rid_names, RID_BYCOPY);
@@ -182,23 +208,23 @@ static void check()
     NAME(rid_names, RID_CHAR16);
     NAME(rid_names, RID_CHAR32);
     NAME(rid_names, RID_CHOOSE_EXPR);
-#if GCCPLUGIN_VERSION >= 5000
+#if V(5)
     NAME(rid_names, RID_CILK_FOR);
 #endif
-#if GCCPLUGIN_VERSION >= 4009
+#if V(4, 9)
     NAME(rid_names, RID_CILK_SPAWN);
     NAME(rid_names, RID_CILK_SYNC);
 #endif
     NAME(rid_names, RID_CLASS);
     NAME(rid_names, RID_COMPLEX);
-#if GCCPLUGIN_VERSION >= 6000
+#if V(6)
     NAME(rid_names, RID_CONCEPT);
 #endif
     NAME(rid_names, RID_CONST);
     NAME(rid_names, RID_CONSTCAST);
     NAME(rid_names, RID_CONSTEXPR);
     NAME(rid_names, RID_CONTINUE);
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_COPY);
 #endif
     NAME(rid_names, RID_CXX_COMPAT_WARN);
@@ -208,7 +234,7 @@ static void check()
     NAME(rid_names, RID_DFLOAT128);
     NAME(rid_names, RID_DFLOAT32);
     NAME(rid_names, RID_DFLOAT64);
-#if GCCPLUGIN_VERSION >= 4007
+#if V(4, 7)
     NAME(rid_names, RID_DIRECT_BASES);
 #endif
     NAME(rid_names, RID_DO);
@@ -222,7 +248,7 @@ static void check()
     NAME(rid_names, RID_EXTERN);
     NAME(rid_names, RID_FALSE);
     NAME(rid_names, RID_FLOAT);
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(rid_names, RID_FLOAT16);
     NAME(rid_names, RID_FLOAT32);
     NAME(rid_names, RID_FLOAT64);
@@ -235,13 +261,13 @@ static void check()
     NAME(rid_names, RID_FRACT);
     NAME(rid_names, RID_FRIEND);
     NAME(rid_names, RID_FUNCTION_NAME);
-#if GCCPLUGIN_VERSION >= 4009
+#if V(4, 9)
     NAME(rid_names, RID_GENERIC);
 #endif
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_GETTER);
 #endif
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(rid_names, RID_GIMPLE);
 #endif
     NAME(rid_names, RID_GOTO);
@@ -252,7 +278,7 @@ static void check()
     NAME(rid_names, RID_HAS_TRIVIAL_CONSTRUCTOR);
     NAME(rid_names, RID_HAS_TRIVIAL_COPY);
     NAME(rid_names, RID_HAS_TRIVIAL_DESTRUCTOR);
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(rid_names, RID_HAS_UNIQUE_OBJ_REPRESENTATIONS);
 #endif
     NAME(rid_names, RID_HAS_VIRTUAL_DESTRUCTOR);
@@ -263,46 +289,46 @@ static void check()
     NAME(rid_names, RID_INLINE);
     NAME(rid_names, RID_INOUT);
     NAME(rid_names, RID_INT);
-#if GCCPLUGIN_VERSION >= 4006 && GCCPLUGIN_VERSION < 5000
+#if V(4, 6) && !V(5)
     NAME(rid_names, RID_INT128);
 #endif
-#if GCCPLUGIN_VERSION >= 5000
+#if V(5)
     NAME(rid_names, RID_INT_N_0);
     NAME(rid_names, RID_INT_N_1);
     NAME(rid_names, RID_INT_N_2);
     NAME(rid_names, RID_INT_N_3);
 #endif
     NAME(rid_names, RID_IS_ABSTRACT);
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(rid_names, RID_IS_AGGREGATE);
 #endif
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(rid_names, RID_IS_ASSIGNABLE);
 #endif
     NAME(rid_names, RID_IS_BASE_OF);
     NAME(rid_names, RID_IS_CLASS);
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(rid_names, RID_IS_CONSTRUCTIBLE);
 #endif
-#if GCCPLUGIN_VERSION < 5000
+#if !V(5)
     NAME(rid_names, RID_IS_CONVERTIBLE_TO);
 #endif
     NAME(rid_names, RID_IS_EMPTY);
     NAME(rid_names, RID_IS_ENUM);
-#if GCCPLUGIN_VERSION >= 4007
+#if V(4, 7)
     NAME(rid_names, RID_IS_FINAL);
 #endif
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_IS_LITERAL_TYPE);
 #endif
     NAME(rid_names, RID_IS_POD);
     NAME(rid_names, RID_IS_POLYMORPHIC);
-#if GCCPLUGIN_VERSION >= 6000
+#if V(6)
     NAME(rid_names, RID_IS_SAME_AS);
 #endif
     NAME(rid_names, RID_IS_STD_LAYOUT);
     NAME(rid_names, RID_IS_TRIVIAL);
-#if GCCPLUGIN_VERSION >= 5000
+#if V(5)
     NAME(rid_names, RID_IS_TRIVIALLY_ASSIGNABLE);
     NAME(rid_names, RID_IS_TRIVIALLY_CONSTRUCTIBLE);
     NAME(rid_names, RID_IS_TRIVIALLY_COPYABLE);
@@ -313,48 +339,48 @@ static void check()
     NAME(rid_names, RID_MUTABLE);
     NAME(rid_names, RID_NAMESPACE);
     NAME(rid_names, RID_NEW);
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_NOEXCEPT);
     NAME(rid_names, RID_NONATOMIC);
 #endif
-#if GCCPLUGIN_VERSION >= 4007
+#if V(4, 7)
     NAME(rid_names, RID_NORETURN);
 #endif
     NAME(rid_names, RID_NULL);
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_NULLPTR);
 #endif
     NAME(rid_names, RID_OFFSETOF);
     NAME(rid_names, RID_ONEWAY);
     NAME(rid_names, RID_OPERATOR);
     NAME(rid_names, RID_OUT);
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(rid_names, RID_PHI);
 #endif
     NAME(rid_names, RID_PRETTY_FUNCTION_NAME);
     NAME(rid_names, RID_PRIVATE);
     NAME(rid_names, RID_PROTECTED);
     NAME(rid_names, RID_PUBLIC);
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_READONLY);
     NAME(rid_names, RID_READWRITE);
 #endif
     NAME(rid_names, RID_REALPART);
     NAME(rid_names, RID_REGISTER);
     NAME(rid_names, RID_REINTCAST);
-#if GCCPLUGIN_VERSION >= 6000
+#if V(6)
     NAME(rid_names, RID_REQUIRES);
 #endif
     NAME(rid_names, RID_RESTRICT);
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_RETAIN);
 #endif
     NAME(rid_names, RID_RETURN);
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(rid_names, RID_RTL);
 #endif
     NAME(rid_names, RID_SAT);
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(rid_names, RID_SETTER);
 #endif
     NAME(rid_names, RID_SHORT);
@@ -365,14 +391,14 @@ static void check()
     NAME(rid_names, RID_STATIC_ASSERT);
     NAME(rid_names, RID_STRUCT);
     NAME(rid_names, RID_SWITCH);
-#if GCCPLUGIN_VERSION >= 6000
+#if V(6)
     NAME(rid_names, RID_SYNCHRONIZED);
 #endif
     NAME(rid_names, RID_TEMPLATE);
     NAME(rid_names, RID_THIS);
     NAME(rid_names, RID_THREAD);
     NAME(rid_names, RID_THROW);
-#if GCCPLUGIN_VERSION >= 4007
+#if V(4, 7)
     NAME(rid_names, RID_TRANSACTION_ATOMIC);
     NAME(rid_names, RID_TRANSACTION_CANCEL);
     NAME(rid_names, RID_TRANSACTION_RELAXED);
@@ -384,7 +410,7 @@ static void check()
     NAME(rid_names, RID_TYPENAME);
     NAME(rid_names, RID_TYPEOF);
     NAME(rid_names, RID_TYPES_COMPATIBLE_P);
-#if GCCPLUGIN_VERSION >= 4007
+#if V(4, 7)
     NAME(rid_names, RID_UNDERLYING_TYPE);
 #endif
     NAME(rid_names, RID_UNION);
@@ -414,7 +440,7 @@ static void check()
     NAME(cti_names, CTI_INT8_TYPE);
     NAME(cti_names, CTI_INTMAX_TYPE);
     NAME(cti_names, CTI_INTPTR_TYPE);
-#if GCCPLUGIN_VERSION < 4009
+#if !V(4, 9)
     NAME(cti_names, CTI_INT_ARRAY_TYPE);
 #endif
     NAME(cti_names, CTI_INT_FAST16_TYPE);
@@ -450,7 +476,7 @@ static void check()
     NAME(cti_names, CTI_UINT_LEAST8_TYPE);
     NAME(cti_names, CTI_UNDERLYING_WCHAR_TYPE);
     NAME(cti_names, CTI_UNSIGNED_PTRDIFF_TYPE);
-#if GCCPLUGIN_VERSION < 5000
+#if !V(5)
     NAME(cti_names, CTI_VOID_ZERO);
 #endif
     NAME(cti_names, CTI_WCHAR_ARRAY_TYPE);
@@ -462,7 +488,7 @@ static void check()
 
     // from <tree-core.h>
     NAME(ti_names, TI_ACCUM_TYPE);
-#if GCCPLUGIN_VERSION >= 4009
+#if V(4, 9)
     NAME(ti_names, TI_ATOMICDI_TYPE);
     NAME(ti_names, TI_ATOMICHI_TYPE);
     NAME(ti_names, TI_ATOMICQI_TYPE);
@@ -477,7 +503,7 @@ static void check()
     NAME(ti_names, TI_BOOLEAN_TYPE);
     NAME(ti_names, TI_COMPLEX_DOUBLE_TYPE);
     NAME(ti_names, TI_COMPLEX_FLOAT_TYPE);
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(ti_names, TI_COMPLEX_FLOAT16_TYPE);
     NAME(ti_names, TI_COMPLEX_FLOAT32_TYPE);
     NAME(ti_names, TI_COMPLEX_FLOAT64_TYPE);
@@ -488,12 +514,12 @@ static void check()
 #endif
     NAME(ti_names, TI_COMPLEX_INTEGER_TYPE);
     NAME(ti_names, TI_COMPLEX_LONG_DOUBLE_TYPE);
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(ti_names, TI_CONST_FENV_T_PTR_TYPE);
     NAME(ti_names, TI_CONST_FEXCEPT_T_PTR_TYPE);
 #endif
     NAME(ti_names, TI_CONST_PTR_TYPE);
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(ti_names, TI_CONST_TM_PTR_TYPE);
 #endif
     NAME(ti_names, TI_CURRENT_OPTIMIZE_PRAGMA);
@@ -509,14 +535,14 @@ static void check()
     NAME(ti_names, TI_DOUBLE_TYPE);
     NAME(ti_names, TI_DQ_TYPE);
     NAME(ti_names, TI_ERROR_MARK);
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(ti_names, TI_FENV_T_PTR_TYPE);
     NAME(ti_names, TI_FEXCEPT_T_PTR_TYPE);
 #endif
     NAME(ti_names, TI_FILEPTR_TYPE);
     NAME(ti_names, TI_FLOAT_PTR_TYPE);
     NAME(ti_names, TI_FLOAT_TYPE);
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(ti_names, TI_FLOAT16_TYPE);
     NAME(ti_names, TI_FLOAT32_TYPE);
     NAME(ti_names, TI_FLOAT64_TYPE);
@@ -531,7 +557,7 @@ static void check()
     NAME(ti_names, TI_INTDI_TYPE);
     NAME(ti_names, TI_INTEGER_MINUS_ONE);
     NAME(ti_names, TI_INTEGER_ONE);
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(ti_names, TI_INTEGER_THREE);
 #endif
     NAME(ti_names, TI_INTEGER_PTR_TYPE);
@@ -551,10 +577,10 @@ static void check()
     NAME(ti_names, TI_OPTIMIZATION_CURRENT);
     NAME(ti_names, TI_OPTIMIZATION_DEFAULT);
     NAME(ti_names, TI_PID_TYPE);
-#if GCCPLUGIN_VERSION >= 5000
+#if V(5)
     NAME(ti_names, TI_POINTER_BOUNDS_TYPE);
 #endif
-#if GCCPLUGIN_VERSION >= 4009
+#if V(4, 9)
     NAME(ti_names, TI_POINTER_SIZED_TYPE);
 #endif
     NAME(ti_names, TI_PRIVATE);
@@ -614,7 +640,7 @@ static void check()
     NAME(ti_names, TI_UFRACT_TYPE);
     NAME(ti_names, TI_UHA_TYPE);
     NAME(ti_names, TI_UHQ_TYPE);
-#if GCCPLUGIN_VERSION >= 4008
+#if V(4, 8)
     NAME(ti_names, TI_UINT16_TYPE);
 #endif
     NAME(ti_names, TI_UINT32_TYPE);
@@ -639,7 +665,7 @@ static void check()
     NAME(ti_names, TI_VA_LIST_GPR_COUNTER_FIELD);
     NAME(ti_names, TI_VA_LIST_TYPE);
     NAME(ti_names, TI_VOID_LIST_NODE);
-#if GCCPLUGIN_VERSION >= 5000
+#if V(5)
     NAME(ti_names, TI_VOID);
 #endif
     NAME(ti_names, TI_VOID_TYPE);
@@ -657,11 +683,11 @@ static void check()
     NAME(itk_names, itk_unsigned_long);
     NAME(itk_names, itk_long_long);
     NAME(itk_names, itk_unsigned_long_long);
-#if GCCPLUGIN_VERSION >= 4006 && GCCPLUGIN_VERSION < 5000
+#if V(4, 6) && !V(5)
     NAME(itk_names, itk_int128);
     NAME(itk_names, itk_unsigned_int128);
 #endif
-#if GCCPLUGIN_VERSION >= 5000
+#if V(5)
     NAME(itk_names, itk_intN_0);
     NAME(itk_names, itk_unsigned_intN_0);
     NAME(itk_names, itk_intN_1);
@@ -674,7 +700,7 @@ static void check()
     CHECK(itk_names);
 
     // from <tree.h>
-#if GCCPLUGIN_VERSION < 4008
+#if !V(4, 8)
     NAME(stk_names, BITSIZETYPE);
     NAME(stk_names, SBITSIZETYPE);
     NAME(stk_names, SIZETYPE);
@@ -691,30 +717,30 @@ static void check()
     NAME(cpti_names, CPTI_ABI);
     NAME(cpti_names, CPTI_ABORT_FNDECL);
     NAME(cpti_names, CPTI_AGGR_TAG);
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(cpti_names, CPTI_ALIGN_TYPE);
 #endif
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(cpti_names, CPTI_ALLOCATE_EXCEPTION_FN);
     NAME(cpti_names, CPTI_ANON_IDENTIFIER);
 #endif
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(cpti_names, CPTI_ANY_TARG);
 #endif
     NAME(cpti_names, CPTI_ATEXIT);
     NAME(cpti_names, CPTI_ATEXIT_FN_PTR_TYPE);
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(cpti_names, CPTI_AUTO_IDENTIFIER);
 #endif
     NAME(cpti_names, CPTI_BASE_CTOR_IDENTIFIER);
     NAME(cpti_names, CPTI_BASE_DTOR_IDENTIFIER);
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(cpti_names, CPTI_BEGIN_CATCH_FN);
 #endif
-#if GCCPLUGIN_VERSION < 8000
+#if !V(8)
     NAME(cpti_names, CPTI_CALL_UNEXPECTED);
 #endif
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(cpti_names, CPTI_CALL_UNEXPECTED_FN);
 #endif
     NAME(cpti_names, CPTI_CLASS_TYPE);
@@ -722,25 +748,25 @@ static void check()
     NAME(cpti_names, CPTI_COMPLETE_CTOR_IDENTIFIER);
     NAME(cpti_names, CPTI_COMPLETE_DTOR_IDENTIFIER);
     NAME(cpti_names, CPTI_CONST_TYPE_INFO_TYPE);
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(cpti_names, CPTI_CONV_OP_IDENTIFIER);
     NAME(cpti_names, CPTI_CONV_OP_MARKER);
 #endif
     NAME(cpti_names, CPTI_CTOR_IDENTIFIER);
     NAME(cpti_names, CPTI_DCAST);
-#if GCCPLUGIN_VERSION >= 7000
+#if V(7)
     NAME(cpti_names, CPTI_DECLTYPE_AUTO_IDENTIFIER);
 #endif
     NAME(cpti_names, CPTI_DELETING_DTOR_IDENTIFIER);
     NAME(cpti_names, CPTI_DELTA_IDENTIFIER);
     NAME(cpti_names, CPTI_DELTA_TYPE);
-#if GCCPLUGIN_VERSION >= 4007 && GCCPLUGIN_VERSION < 4008
+#if V(4, 7) && !V(4, 8)
     NAME(cpti_names, CPTI_DEPENDENT_LAMBDA_RETURN_TYPE);
 #endif
     NAME(cpti_names, CPTI_DSO_HANDLE);
     NAME(cpti_names, CPTI_DTOR_IDENTIFIER);
     NAME(cpti_names, CPTI_EMPTY_EXCEPT_SPEC);
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(cpti_names, CPTI_END_CATCH_FN);
     NAME(cpti_names, CPTI_FREE_EXCEPTION_FN);
     NAME(cpti_names, CPTI_GET_EXCEPTION_PTR_FN);
@@ -748,15 +774,15 @@ static void check()
     NAME(cpti_names, CPTI_GLOBAL_IDENTIFIER);
     NAME(cpti_names, CPTI_GLOBAL_TYPE);
 #endif
-#if GCCPLUGIN_VERSION < 5000
+#if !V(5)
     NAME(cpti_names, CPTI_GLOBAL_DELETE_FNDECL);
 #endif
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(cpti_names, CPTI_INIT_LIST_IDENTIFIER);
 #endif
     NAME(cpti_names, CPTI_INIT_LIST_TYPE);
     NAME(cpti_names, CPTI_IN_CHARGE_IDENTIFIER);
-#if GCCPLUGIN_VERSION < 7000
+#if !V(7)
     NAME(cpti_names, CPTI_JAVA_BOOLEAN_TYPE);
     NAME(cpti_names, CPTI_JAVA_BYTE_TYPE);
     NAME(cpti_names, CPTI_JAVA_CHAR_TYPE);
@@ -767,40 +793,40 @@ static void check()
     NAME(cpti_names, CPTI_JAVA_SHORT_TYPE);
     NAME(cpti_names, CPTI_JCLASS);
 #endif
-#if GCCPLUGIN_VERSION < 8000
+#if !V(8)
     NAME(cpti_names, CPTI_KEYED_CLASSES);
 #endif
     NAME(cpti_names, CPTI_LANG_NAME_C);
     NAME(cpti_names, CPTI_LANG_NAME_CPLUSPLUS);
-#if GCCPLUGIN_VERSION < 7000
+#if !V(7)
     NAME(cpti_names, CPTI_LANG_NAME_JAVA);
 #endif
-#if GCCPLUGIN_VERSION < 8000
+#if !V(8)
     NAME(cpti_names, CPTI_NELTS_IDENTIFIER);
 #endif
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(cpti_names, CPTI_NOEXCEPT_DEFERRED_SPEC);
 #endif
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(cpti_names, CPTI_NOEXCEPT_FALSE_SPEC);
     NAME(cpti_names, CPTI_NOEXCEPT_TRUE_SPEC);
     NAME(cpti_names, CPTI_NULLPTR);
     NAME(cpti_names, CPTI_NULLPTR_TYPE);
 #endif
     NAME(cpti_names, CPTI_PFN_IDENTIFIER);
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(cpti_names, CPTI_RETHROW_FN);
 #endif
     NAME(cpti_names, CPTI_STD);
     NAME(cpti_names, CPTI_STD_IDENTIFIER);
-#if GCCPLUGIN_VERSION < 8000
+#if !V(8)
     NAME(cpti_names, CPTI_TERMINATE);
 #endif
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(cpti_names, CPTI_TERMINATE_FN);
 #endif
     NAME(cpti_names, CPTI_THIS_IDENTIFIER);
-#if GCCPLUGIN_VERSION >= 8000
+#if V(8)
     NAME(cpti_names, CPTI_THROW_FN);
 #endif
     NAME(cpti_names, CPTI_TYPE_INFO_PTR_TYPE);
@@ -815,7 +841,7 @@ static void check()
     NAME(cpti_names, CPTI_WCHAR_DECL);
     CHECK(cpti_names);
 
-#if GCCPLUGIN_VERSION >= 5000
+#if V(5)
     NAME(cilk_ti_names, CILK_TI_FRAME_CONTEXT);
     NAME(cilk_ti_names, CILK_TI_FRAME_EXCEPTION);
     NAME(cilk_ti_names, CILK_TI_FRAME_FLAGS);
@@ -850,7 +876,11 @@ static void check()
     NAME(omp_clause_schedule_names, OMP_CLAUSE_SCHEDULE_GUIDED);
     NAME(omp_clause_schedule_names, OMP_CLAUSE_SCHEDULE_AUTO);
     NAME(omp_clause_schedule_names, OMP_CLAUSE_SCHEDULE_RUNTIME);
-    CHECK(omp_clause_schedule_names);
+#if V(5)
+    NAME(omp_clause_schedule_names, OMP_CLAUSE_SCHEDULE_CILKFOR);
+#endif
+    if (!V(6))
+        CHECK(omp_clause_schedule_names);
 
     NAME(omp_clause_default_names, OMP_CLAUSE_DEFAULT_UNSPECIFIED);
     NAME(omp_clause_default_names, OMP_CLAUSE_DEFAULT_SHARED);
@@ -858,6 +888,74 @@ static void check()
     NAME(omp_clause_default_names, OMP_CLAUSE_DEFAULT_PRIVATE);
     NAME(omp_clause_default_names, OMP_CLAUSE_DEFAULT_FIRSTPRIVATE);
     CHECK(omp_clause_default_names);
+
+#if V(4, 9)
+    NAME(omp_clause_depend_names, OMP_CLAUSE_DEPEND_IN);
+    NAME(omp_clause_depend_names, OMP_CLAUSE_DEPEND_OUT);
+    NAME(omp_clause_depend_names, OMP_CLAUSE_DEPEND_INOUT);
+#if V(6)
+    NAME(omp_clause_depend_names, OMP_CLAUSE_DEPEND_SOURCE);
+    NAME(omp_clause_depend_names, OMP_CLAUSE_DEPEND_SINK);
+#endif
+    CHECK(omp_clause_depend_names);
+
+#if !V(5)
+    NAME(omp_clause_map_names, OMP_CLAUSE_MAP_ALLOC);
+    NAME(omp_clause_map_names, OMP_CLAUSE_MAP_TO);
+    NAME(omp_clause_map_names, OMP_CLAUSE_MAP_FROM);
+    NAME(omp_clause_map_names, OMP_CLAUSE_MAP_TOFROM);
+    NAME(omp_clause_map_names, OMP_CLAUSE_MAP_POINTER);
+    NAME(omp_clause_map_names, OMP_CLAUSE_MAP_TO_PSET);
+    CHECK(omp_clause_map_names);
+#else
+    NAME(gomp_map_names, GOMP_MAP_ALLOC);
+    NAME(gomp_map_names, GOMP_MAP_TO);
+    NAME(gomp_map_names, GOMP_MAP_FROM);
+    NAME(gomp_map_names, GOMP_MAP_TOFROM);
+    NAME(gomp_map_names, GOMP_MAP_POINTER);
+    NAME(gomp_map_names, GOMP_MAP_TO_PSET);
+    NAME(gomp_map_names, GOMP_MAP_FORCE_PRESENT);
+    NAME(gomp_map_names, GOMP_MAP_FORCE_DEALLOC);
+    assert (GOMP_MAP_DELETE == GOMP_MAP_FORCE_DEALLOC);
+    NAME(gomp_map_names, GOMP_MAP_FORCE_DEVICEPTR);
+    NAME(gomp_map_names, GOMP_MAP_DEVICE_RESIDENT);
+    NAME(gomp_map_names, GOMP_MAP_LINK);
+    NAME(gomp_map_names, GOMP_MAP_FIRSTPRIVATE);
+    NAME(gomp_map_names, GOMP_MAP_FIRSTPRIVATE_INT);
+    NAME(gomp_map_names, GOMP_MAP_USE_DEVICE_PTR);
+    NAME(gomp_map_names, GOMP_MAP_ZERO_LEN_ARRAY_SECTION);
+    NAME(gomp_map_names, GOMP_MAP_FORCE_ALLOC);
+    NAME(gomp_map_names, GOMP_MAP_FORCE_TO);
+    NAME(gomp_map_names, GOMP_MAP_FORCE_FROM);
+    NAME(gomp_map_names, GOMP_MAP_FORCE_TOFROM);
+    NAME(gomp_map_names, GOMP_MAP_ALWAYS_TO);
+    NAME(gomp_map_names, GOMP_MAP_ALWAYS_FROM);
+    NAME(gomp_map_names, GOMP_MAP_ALWAYS_TOFROM);
+    NAME(gomp_map_names, GOMP_MAP_STRUCT);
+    NAME(gomp_map_names, GOMP_MAP_ALWAYS_POINTER);
+    NAME(gomp_map_names, GOMP_MAP_DELETE_ZERO_LEN_ARRAY_SECTION);
+    NAME(gomp_map_names, GOMP_MAP_RELEASE);
+    // these are beyond 256
+    NAME(gomp_map_names, GOMP_MAP_FIRSTPRIVATE_POINTER);
+    NAME(gomp_map_names, GOMP_MAP_FIRSTPRIVATE_REFERENCE);
+    // don't CHECK(gomp_map_names), it deliberately leaves some elements NULL
+#endif
+
+    NAME(omp_clause_proc_bind_names, OMP_CLAUSE_PROC_BIND_FALSE);
+    NAME(omp_clause_proc_bind_names, OMP_CLAUSE_PROC_BIND_TRUE);
+    NAME(omp_clause_proc_bind_names, OMP_CLAUSE_PROC_BIND_MASTER);
+    NAME(omp_clause_proc_bind_names, OMP_CLAUSE_PROC_BIND_CLOSE);
+    NAME(omp_clause_proc_bind_names, OMP_CLAUSE_PROC_BIND_SPREAD);
+    CHECK(omp_clause_proc_bind_names);
+#endif
+
+#if V(6)
+    NAME(omp_clause_linear_names, OMP_CLAUSE_LINEAR_DEFAULT);
+    NAME(omp_clause_linear_names, OMP_CLAUSE_LINEAR_REF);
+    NAME(omp_clause_linear_names, OMP_CLAUSE_LINEAR_VAL);
+    NAME(omp_clause_linear_names, OMP_CLAUSE_LINEAR_UVAL);
+    CHECK(omp_clause_linear_names);
+#endif
 
     assert (strcmp(tls_model_names[TLS_MODEL_NONE], "none") == 0);
     assert (strcmp(tls_model_names[TLS_MODEL_EMULATED], "emulated") == 0);
@@ -888,10 +986,10 @@ static void check()
     NAME(cpp_builtin_type_names, BT_PRAGMA);
     NAME(cpp_builtin_type_names, BT_TIMESTAMP);
     NAME(cpp_builtin_type_names, BT_COUNTER);
-#if GCCPLUGIN_VERSION >= 5000
+#if V(5)
     NAME(cpp_builtin_type_names, BT_HAS_ATTRIBUTE);
 #endif
-#if GCCPLUGIN_VERSION >= 4006
+#if V(4, 6)
     NAME(cpp_builtin_type_names, BT_FIRST_USER+0);
     NAME(cpp_builtin_type_names, BT_FIRST_USER+1);
     NAME(cpp_builtin_type_names, BT_FIRST_USER+2);

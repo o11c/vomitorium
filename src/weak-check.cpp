@@ -1,5 +1,8 @@
 #include "internal.hpp"
 
+#include "vgcc/tree.h"
+
+
 // Used only if ENABLE_TREE_CHECKING was *not* originally enabled.
 // TODO copy the originals out of GCC source
 
@@ -75,4 +78,13 @@ void omp_clause_range_check_failed(const_tree, const char *, int, const char *, 
 {
     abort();
 }
+
+#if V(5)
+__attribute__((weak))
+void tree_int_cst_elt_check_failed (int, int, const char *, int, const char *)
+{
+    abort();
+}
+#endif
+
 #pragma GCC visibility pop

@@ -1,6 +1,3 @@
-// mumble, avoid poison
-#include <cstdlib>
-
 #include "internal.hpp"
 
 #include <cassert>
@@ -8,6 +5,9 @@
 #include <string>
 #include <map>
 #include <memory>
+
+#include "vgcc/c-family/c-common.h"
+#include "vgcc/langhooks.h"
 
 
 static plugin_info vomitorium_info =
@@ -250,7 +250,7 @@ int plugin_init (struct plugin_name_args *plugin_info,
 
     if (options.info)
     {
-        printf("compiled with %d, for %s [code '%c'] %d\n", GCCPLUGIN_VERSION, lang_hooks.name, vomitorium_current_frontend, GCC_VERSION);
+        printf("compiled with %s, for %s [code '%c'] %s %s\n", __VERSION__, lang_hooks.name, vomitorium_current_frontend, gcc_version.basever, gcc_version.datestamp);
 
         printf("compile-time GCC basever: %s\n", gcc_version.basever);
         printf("compile-time GCC datestamp: %s\n", gcc_version.datestamp);

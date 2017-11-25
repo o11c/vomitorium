@@ -4,28 +4,27 @@
 
 #include <iterator>
 
-// Note: this header (probably) supports any combination of GCC_VERSION
-// and GCCPLUGIN_VERSION, even if the rest of the build system doesn't.
+#include "vgcc/tree.h"
 
 // GCC 4.5 doesn't support `for (item : container)` ye
-#if GCC_VERSION >= 4006
+#if G(4, 6)
 # define foreach(e, c) for (e : c)
-#else // GCC_VERSION >= 4006
+#else // G(4, 6)
 # include <boost/foreach.hpp>
 // usually replaced below to use container_wrapper
 # define foreach(e, c) BOOST_FOREACH(e, c)
 #endif
 
 // Define C++-style iterators for versions of GCC still written in C.
-#if GCCPLUGIN_VERSION < 4008
+#if !V(4, 8)
 
-# if GCCPLUGIN_VERSION >= 4007
+# if V(4, 7)
 #  define num prefix.num
 # endif
 # define GENERIC_VEC_ITER_BEGIN(v) ((v) ? &(v)->base.vec[0] : nullptr)
 # define GENERIC_VEC_ITER_END(v) ((v) ? &(v)->base.vec[(v)->base.num] : nullptr)
 
-# if GCC_VERSION >= 4006
+# if G(4, 6)
 
 #  define MAKE_VEC_ITERATOR(T, A)               \
     inline T *begin(VEC(T, A) *v)               \
@@ -45,7 +44,7 @@
         return GENERIC_VEC_ITER_END(v);         \
     }
 
-# else // GCC_VERSION >= 4006
+# else // G(4, 6)
 
 # undef foreach
 # define foreach(e, c) BOOST_FOREACH(e, container_wrapper(c))
@@ -126,7 +125,7 @@ C&& container_wrapper(C&& c)
         };                                                              \
     }
 
-# endif // GCC_VERSION >= 4006
+# endif // G(4, 6)
 
 MAKE_VEC_ITERATOR(alias_pair, gc);
 MAKE_VEC_ITERATOR(constructor_elt, gc);
@@ -134,10 +133,10 @@ MAKE_VEC_ITERATOR(tree, gc);
 
 #undef num
 
-#else // GCCPLUGIN_VERSION < 4008
+#else // !V(4, 8)
 // still allow iterating over pointer-to-vec
 
-# if GCCPLUGIN_VERSION < 7000
+# if !V(7)
 template<class T, class A>
 T *begin(vec<T, A>& v)
 {
@@ -190,4 +189,4 @@ const T *end(const vec<T, A> *v)
 
 #define MAKE_VEC_ITERATOR(T, A) /* nothing */
 
-#endif // GCCPLUGIN_VERSION < 4008
+#endif // !V(4, 8)

@@ -1,1 +1,1 @@
-Makefile.all
+make/one.make

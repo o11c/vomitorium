@@ -1,0 +1,3 @@
+[submodule "submodules/vgcc"]
+	path = submodules/vgcc
+	url = git://github.com/o11c/vomitorium-gcc-headers.git

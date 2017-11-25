@@ -8,6 +8,22 @@ Note that, due to the way the Runtime Exception works,
 all code that manipulates this format must still be GPL3-compatible.
 This is a feature, not a bug.
 
+##Installation:
+
+`CC` and `CXX` are used to build the plugin itself.
+`PLUGIN_CC` is the compiler we're building it *for*. It might be a
+cross-compiler or an older version than you're building with. Make sure
+you still have a libstdc++ to run vomitorium itself with!
+
+`make CC=gcc-7 CXX=g++-7 PLUGIN_CC=gcc-4.5`
+
+Alternatively, you can build against *all* known combinations (if installed),
+or a subset thereof (in subdirectories - we support out-of-tree builds!):
+
+`make -f make/all.make GCC_VERSIONS='5 6 7'`.
+
+`make install` isn't implemented quite yet, but it will be sooner or later.
+
 ##Usage as a tool:
 
     CFLAGS += -fplugin=vomitorium -fplugin-arg-vomitorium-dump -fplugin-arg-vomitorium-output=./foo.xml

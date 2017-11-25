@@ -1,3 +1,7 @@
-/gcc-*/
+/builds/
+
+/bin/
+/gen/
 /lib/
 /obj/
+/stamp/

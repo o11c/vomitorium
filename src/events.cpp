@@ -6,7 +6,7 @@ static void simple_event_printer(void *gcc_data, void *user_data);
 
 void debug_events()
 {
-#if GCCPLUGIN_VERSION < 4009
+#if !V(4, 9)
 # define is_pseudo_event(evt) ((evt) == PLUGIN_PASS_MANAGER_SETUP || (evt) == PLUGIN_INFO || (evt) == PLUGIN_REGISTER_GGC_ROOTS || (evt) == PLUGIN_REGISTER_GGC_CACHES)
 #else
 # define is_pseudo_event(evt) ((evt) == PLUGIN_PASS_MANAGER_SETUP || (evt) == PLUGIN_INFO || (evt) == PLUGIN_REGISTER_GGC_ROOTS)
@@ -23,7 +23,7 @@ static void simple_event_printer(void *gcc_data, void *user_data)
 {
     switch (i)
     {
-#if GCCPLUGIN_VERSION >= 6000
+#if V(6)
     case PLUGIN_START_PARSE_FUNCTION:
         printf("%s: %p\n", (const char *)user_data, gcc_data);
         break;
@@ -34,7 +34,7 @@ static void simple_event_printer(void *gcc_data, void *user_data)
     case PLUGIN_FINISH_TYPE:
         printf("%s: %p\n", (const char *)user_data, gcc_data);
         break;
-#if GCCPLUGIN_VERSION >= 4007
+#if V(4, 7)
     case PLUGIN_FINISH_DECL:
         printf("%s: %p\n", (const char *)user_data, gcc_data);
         break;
@@ -93,7 +93,7 @@ static void simple_event_printer(void *gcc_data, void *user_data)
     case PLUGIN_NEW_PASS:
         printf("%s: %p\n", (const char *)user_data, gcc_data);
         break;
-#if GCCPLUGIN_VERSION >= 4009
+#if V(4, 9)
     case PLUGIN_INCLUDE_FILE:
         printf("%s: %s\n", (const char *)user_data, (const char *)gcc_data);
         break;
@@ -104,7 +104,7 @@ static void simple_event_printer(void *gcc_data, void *user_data)
     case PLUGIN_PASS_MANAGER_SETUP:
     case PLUGIN_INFO:
     case PLUGIN_REGISTER_GGC_ROOTS:
-#if GCCPLUGIN_VERSION < 4009
+#if !V(4, 9)
     case PLUGIN_REGISTER_GGC_CACHES:
 #endif
         // these are not real events
